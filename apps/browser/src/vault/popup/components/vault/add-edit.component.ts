@@ -180,7 +180,7 @@ export class AddEditComponent extends BaseAddEditComponent implements OnInit {
 
   async submit(): Promise<boolean> {
     const fido2SessionData = await firstValueFrom(this.fido2PopoutSessionData$);
-    const { isFido2Session, sessionId, userVerification } = fido2SessionData;
+    const { isFido2Session, sessionId, userVerification, fromLock } = fido2SessionData;
     const inFido2PopoutWindow = BrowserPopupUtils.inPopout(window) && isFido2Session;
 
     // normalize card expiry year on save
@@ -188,11 +188,14 @@ export class AddEditComponent extends BaseAddEditComponent implements OnInit {
       this.cipher.card.expYear = normalizeExpiryYearFormat(this.cipher.card.expYear);
     }
 
-    // TODO: Revert to use fido2 user verification service once user verification for passkeys is approved for production.
-    // PM-4577 - https://github.com/bitwarden/clients/pull/8746
     if (
       inFido2PopoutWindow &&
-      !(await this.handleFido2UserVerification(sessionId, userVerification))
+      userVerification &&
+      !(await this.fido2UserVerificationService.handleUserVerification(
+        userVerification,
+        this.cipher,
+        fromLock,
+      ))
     ) {
       return false;
     }
@@ -400,15 +403,5 @@ export class AddEditComponent extends BaseAddEditComponent implements OnInit {
     if (message.command === "inlineAutofillMenuRefreshAddEditCipher") {
       this.load().catch((error) => this.logService.error(error));
     }
-  }
-
-  // TODO: Remove and use fido2 user verification service once user verification for passkeys is approved for production.
-  // Be sure to make the same changes to add-edit-v2.component.ts if applicable
-  private async handleFido2UserVerification(
-    sessionId: string,
-    userVerification: boolean,
-  ): Promise<boolean> {
-    // We are bypassing user verification pending approval for production.
-    return true;
   }
 }
