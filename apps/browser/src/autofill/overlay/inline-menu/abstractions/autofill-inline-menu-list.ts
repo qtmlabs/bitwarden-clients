@@ -8,6 +8,7 @@ type AutofillInlineMenuListMessage = { command: string };
 export type UpdateAutofillInlineMenuListCiphersMessage = AutofillInlineMenuListMessage & {
   ciphers: InlineMenuCipherData[];
   showInlineMenuAccountCreation?: boolean;
+  showPasskeysLabels?: boolean;
   showMorePasskeys?: boolean;
 };
 
