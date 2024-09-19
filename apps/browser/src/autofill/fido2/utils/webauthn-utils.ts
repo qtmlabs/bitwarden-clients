@@ -60,19 +60,19 @@ export class WebauthnUtils {
   static mapCredentialRegistrationResult(result: CreateCredentialResult): PublicKeyCredential {
     const credential = {
       id: result.credentialId,
-      rawId: Fido2Utils.stringToBuffer(result.credentialId),
+      rawId: Fido2Utils.stringToArrayBuffer(result.credentialId),
       type: "public-key",
       authenticatorAttachment: "platform",
       response: {
-        clientDataJSON: Fido2Utils.stringToBuffer(result.clientDataJSON),
-        attestationObject: Fido2Utils.stringToBuffer(result.attestationObject),
+        clientDataJSON: Fido2Utils.stringToArrayBuffer(result.clientDataJSON),
+        attestationObject: Fido2Utils.stringToArrayBuffer(result.attestationObject),
 
         getAuthenticatorData(): ArrayBuffer {
-          return Fido2Utils.stringToBuffer(result.authData);
+          return Fido2Utils.stringToArrayBuffer(result.authData);
         },
 
         getPublicKey(): ArrayBuffer {
-          return Fido2Utils.stringToBuffer(result.publicKey);
+          return Fido2Utils.stringToArrayBuffer(result.publicKey);
         },
 
         getPublicKeyAlgorithm(): number {
@@ -122,13 +122,13 @@ export class WebauthnUtils {
   static mapCredentialAssertResult(result: AssertCredentialResult): PublicKeyCredential {
     const credential = {
       id: result.credentialId,
-      rawId: Fido2Utils.stringToBuffer(result.credentialId),
+      rawId: Fido2Utils.stringToArrayBuffer(result.credentialId),
       type: "public-key",
       response: {
-        authenticatorData: Fido2Utils.stringToBuffer(result.authenticatorData),
-        clientDataJSON: Fido2Utils.stringToBuffer(result.clientDataJSON),
-        signature: Fido2Utils.stringToBuffer(result.signature),
-        userHandle: Fido2Utils.stringToBuffer(result.userHandle),
+        authenticatorData: Fido2Utils.stringToArrayBuffer(result.authenticatorData),
+        clientDataJSON: Fido2Utils.stringToArrayBuffer(result.clientDataJSON),
+        signature: Fido2Utils.stringToArrayBuffer(result.signature),
+        userHandle: Fido2Utils.stringToArrayBuffer(result.userHandle),
       } as AuthenticatorAssertionResponse,
       getClientExtensionResults: () => ({}),
       authenticatorAttachment: "platform",
