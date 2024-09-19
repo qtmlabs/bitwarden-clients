@@ -34,7 +34,9 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   private filledByCipherType: CipherType;
   private showInlineMenuAccountCreation: boolean;
   private showPasskeysLabels: boolean;
+  private showMorePasskeys: boolean;
   private newItemButtonElement: HTMLButtonElement;
+  private morePasskeysButtonElement: HTMLButtonElement;
   private passkeysHeadingElement: HTMLLIElement;
   private loginHeadingElement: HTMLLIElement;
   private lastPasskeysListItem: HTMLLIElement;
@@ -49,7 +51,11 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
       initAutofillInlineMenuList: ({ message }) => this.initAutofillInlineMenuList(message),
       checkAutofillInlineMenuListFocused: () => this.checkInlineMenuListFocused(),
       updateAutofillInlineMenuListCiphers: ({ message }) =>
-        this.updateListItems(message.ciphers, message.showInlineMenuAccountCreation),
+        this.updateListItems(
+          message.ciphers,
+          message.showInlineMenuAccountCreation,
+          message.showMorePasskeys,
+        ),
       focusAutofillInlineMenuList: () => this.focusInlineMenuList(),
     };
 
@@ -83,6 +89,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     filledByCipherType,
     showInlineMenuAccountCreation,
     showPasskeysLabels,
+    showMorePasskeys,
   }: InitAutofillInlineMenuListMessage) {
     const linkElement = await this.initAutofillInlineMenuPage(
       "list",
@@ -104,7 +111,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     this.shadowDom.append(linkElement, this.inlineMenuListContainer);
 
     if (authStatus === AuthenticationStatus.Unlocked) {
-      this.updateListItems(ciphers, showInlineMenuAccountCreation);
+      this.updateListItems(ciphers, showInlineMenuAccountCreation, showMorePasskeys);
       return;
     }
 
@@ -157,6 +164,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   private updateListItems(
     ciphers: InlineMenuCipherData[],
     showInlineMenuAccountCreation?: boolean,
+    showMorePasskeys?: boolean,
   ) {
     if (this.isPasskeyAuthInProgress) {
       return;
@@ -165,6 +173,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     this.ciphers = ciphers;
     this.currentCipherIndex = 0;
     this.showInlineMenuAccountCreation = showInlineMenuAccountCreation;
+    this.showMorePasskeys = showMorePasskeys;
     this.resetInlineMenuContainer();
 
     if (!ciphers?.length) {
@@ -182,14 +191,31 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     this.inlineMenuListContainer.appendChild(this.ciphersList);
     this.toggleScrollClass();
 
+    if (this.showMorePasskeys) {
+      const morePasskeysButtonContainer = this.buildMorePasskeysButton();
+      this.inlineMenuListContainer.appendChild(morePasskeysButtonContainer);
+      this.inlineMenuListContainer.classList.add(
+        "inline-menu-list-container--with-special-action-button",
+      );
+      this.morePasskeysButtonElement.addEventListener(
+        EVENTS.KEYUP,
+        this.handleSpecialActionButtonKeyUpEvent,
+      );
+    }
+
     if (!this.showInlineMenuAccountCreation) {
       return;
     }
 
     const addNewLoginButtonContainer = this.buildNewItemButton();
     this.inlineMenuListContainer.appendChild(addNewLoginButtonContainer);
-    this.inlineMenuListContainer.classList.add("inline-menu-list-container--with-new-item-button");
-    this.newItemButtonElement.addEventListener(EVENTS.KEYUP, this.handleNewItemButtonKeyUpEvent);
+    this.inlineMenuListContainer.classList.add(
+      "inline-menu-list-container--with-special-action-button",
+    );
+    this.newItemButtonElement.addEventListener(
+      EVENTS.KEYUP,
+      this.handleSpecialActionButtonKeyUpEvent,
+    );
   }
 
   /**
@@ -199,7 +225,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     if (this.inlineMenuListContainer) {
       this.inlineMenuListContainer.innerHTML = "";
       this.inlineMenuListContainer.classList.remove(
-        "inline-menu-list-container--with-new-item-button",
+        "inline-menu-list-container--with-special-action-button",
       );
     }
   }
@@ -215,7 +241,14 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
 
     const newItemButton = this.buildNewItemButton();
 
-    this.inlineMenuListContainer.append(noItemsMessage, newItemButton);
+    this.inlineMenuListContainer.append(noItemsMessage);
+
+    if (this.showMorePasskeys) {
+      const morePasskeysButton = this.buildMorePasskeysButton();
+      this.inlineMenuListContainer.append(morePasskeysButton);
+    }
+
+    this.inlineMenuListContainer.append(newItemButton);
   }
 
   /**
@@ -275,6 +308,32 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
 
     return this.getTranslation("addNewVaultItem");
   }
+
+  /**
+   * Builds a "More passkeys" button and returns the container of that button.
+   */
+  private buildMorePasskeysButton() {
+    this.morePasskeysButtonElement = globalThis.document.createElement("button");
+    this.morePasskeysButtonElement.tabIndex = -1;
+    this.morePasskeysButtonElement.id = "more-passkeys-button";
+    this.morePasskeysButtonElement.classList.add(
+      "more-passkeys-button",
+      "inline-menu-list-button",
+      "inline-menu-list-action",
+    );
+    this.morePasskeysButtonElement.textContent = this.getTranslation("morePasskeys");
+    this.morePasskeysButtonElement.prepend(buildSvgDomElement(passkeyIcon));
+    this.morePasskeysButtonElement.addEventListener(
+      EVENTS.CLICK,
+      this.handleMorePasskeysButtonClick,
+    );
+
+    return this.buildButtonContainer(this.morePasskeysButtonElement);
+  }
+
+  private handleMorePasskeysButtonClick = () => {
+    this.postMessageToParent({ command: "requestFido2Fallback" });
+  };
 
   /**
    * Builds a container for a given element.
@@ -677,12 +736,13 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   };
 
   /**
-   * Handles the keyup event for the "New Item" button. Allows for keyboard navigation
-   * between ciphers elements if the other ciphers exist in the inline menu.
+   * Handles the keyup event for the "New Item" and "More passkeys" button.
+   * Allows for keyboard navigation between ciphers elements if the other
+   * ciphers exist in the inline menu.
    *
    * @param event - The captured keyup event.
    */
-  private handleNewItemButtonKeyUpEvent = (event: KeyboardEvent) => {
+  private handleSpecialActionButtonKeyUpEvent = (event: KeyboardEvent) => {
     const listenedForKeys = new Set(["ArrowDown", "ArrowUp"]);
     if (!listenedForKeys.has(event.code) || !(event.target instanceof Element)) {
       return;

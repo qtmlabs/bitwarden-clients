@@ -3394,6 +3394,10 @@
     "message": "Bitwarden autofill menu",
     "description": "Page title in overlay"
   },
+  "morePasskeys": {
+    "message": "More passkeys",
+    "description": "Button to display in Conditional UI flow to use native passkeys"
+  },
   "unlockYourAccountToViewMatchingLogins": {
     "message": "Unlock your account to view matching logins",
     "description": "Text to display in overlay when the account is locked."

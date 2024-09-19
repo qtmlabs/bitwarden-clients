@@ -175,7 +175,18 @@ export interface PublicKeyCredentialParam {
  */
 export class FallbackRequestedError extends Error {
   readonly fallbackRequested = true;
-  constructor() {
-    super("FallbackRequested");
+  constructor(message = "FallbackRequested") {
+    super(message);
+  }
+}
+
+/**
+ * Error thrown when the user requests a fallback to the browser's built-in WebAuthn implementation
+ * during the conditional UI flow.
+ */
+export class ConditionalFallbackRequestedError extends FallbackRequestedError {
+  readonly conditionalFallbackRequested = true;
+  constructor(message = "ConditionalFallbackRequested") {
+    super(message);
   }
 }

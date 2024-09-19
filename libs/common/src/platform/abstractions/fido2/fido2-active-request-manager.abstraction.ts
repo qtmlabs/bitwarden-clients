@@ -12,11 +12,12 @@ type Fido2ActiveRequestEvent = typeof Fido2ActiveRequestEvents;
 
 export type RequestResult =
   | { type: Fido2ActiveRequestEvent["Refresh"] }
-  | { type: Fido2ActiveRequestEvent["Abort"] }
+  | { type: Fido2ActiveRequestEvent["Abort"]; fallbackRequested: boolean }
   | { type: Fido2ActiveRequestEvent["Continue"]; credentialId: string };
 
 export interface ActiveRequest {
   credentials: Fido2CredentialView[];
+  fallbackSupported: boolean;
   subject: Subject<RequestResult>;
 }
 
@@ -28,8 +29,9 @@ export abstract class Fido2ActiveRequestManager {
   newActiveRequest: (
     tabId: number,
     credentials: Fido2CredentialView[],
+    fallbackSupported: boolean,
     abortController: AbortController,
   ) => Promise<RequestResult>;
-  removeActiveRequest: (tabId: number) => void;
+  removeActiveRequest: (tabId: number, fallbackRequested?: boolean) => void;
   removeAllActiveRequests: () => void;
 }

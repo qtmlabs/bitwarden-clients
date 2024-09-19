@@ -22,6 +22,7 @@ import {
 import {
   AssertCredentialParams,
   AssertCredentialResult,
+  ConditionalFallbackRequestedError,
   CreateCredentialParams,
   CreateCredentialResult,
   FallbackRequestedError,
@@ -379,6 +380,7 @@ export class Fido2ClientService implements Fido2ClientServiceAbstraction {
       const requestResult = await this.requestManager.newActiveRequest(
         tab.id,
         availableCredentials,
+        params.fallbackSupported,
         abortController,
       );
 
@@ -387,17 +389,23 @@ export class Fido2ClientService implements Fido2ClientServiceAbstraction {
       }
 
       if (requestResult.type === Fido2ActiveRequestEvents.Abort) {
+        if (requestResult.fallbackRequested) {
+          throw new ConditionalFallbackRequestedError();
+        }
         break;
       }
 
-      params.allowedCredentialIds = [
-        Fido2Utils.bufferToString(guidToRawFormat(requestResult.credentialId)),
-      ];
       assumeUserPresence = true;
 
       const clientDataHash = await crypto.subtle.digest({ name: "SHA-256" }, clientDataJSONBytes);
       const getAssertionParams = mapToGetAssertionParams({
-        params,
+        params: {
+          ...params,
+          allowedCredentialIds: [
+            Fido2Utils.bufferToString(guidToRawFormat(requestResult.credentialId)),
+          ],
+          fallbackSupported: false,
+        },
         clientDataHash,
         assumeUserPresence,
       });

@@ -8,6 +8,7 @@ import {
   debounceTime,
   Observable,
   map,
+  tap,
 } from "rxjs";
 import { parse } from "tldts";
 
@@ -118,6 +119,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
   private isInlineMenuListVisible: boolean = false;
   private showPasskeysLabelsWithinInlineMenu: boolean = false;
   private iconsServerUrl: string;
+  private hasFido2ConditionalFallback: boolean = false;
   private readonly extensionMessageHandlers: OverlayBackgroundExtensionMessageHandlers = {
     autofillOverlayElementClosed: ({ message, sender }) =>
       this.overlayElementClosed(message, sender),
@@ -169,6 +171,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
     checkAutofillInlineMenuButtonFocused: () => this.checkInlineMenuButtonFocused(),
     autofillInlineMenuBlurred: () => this.checkInlineMenuButtonFocused(),
     unlockVault: ({ port }) => this.unlockVault(port),
+    requestFido2Fallback: ({ port }) => this.requestFido2Fallback(port),
     fillAutofillInlineMenuCipher: ({ message, port }) => this.fillInlineMenuCipher(message, port),
     addNewVaultItem: ({ message, port }) => this.getNewVaultItemDetails(message, port),
     viewSelectedCipher: ({ message, port }) => this.viewSelectedCipher(message, port),
@@ -312,6 +315,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       ciphers,
       showInlineMenuAccountCreation: this.showInlineMenuAccountCreation(),
       showPasskeysLabels: this.showPasskeysLabelsWithinInlineMenu,
+      showMorePasskeys: this.showMorePasskeys(),
     });
   }
 
@@ -649,6 +653,13 @@ export class OverlayBackground implements OverlayBackgroundInterface {
   }
 
   /**
+   * Determines whether the "More passkeys" button should be shown.
+   */
+  private showMorePasskeys(): boolean {
+    return this.hasFido2ConditionalFallback && this.focusedFieldData?.showPasskeys;
+  }
+
+  /**
    * Stores the credential ids associated with a FIDO2 conditional mediated ui request.
    *
    * @param credentials - The FIDO2 credentials to store
@@ -668,9 +679,10 @@ export class OverlayBackground implements OverlayBackgroundInterface {
    * @param tabId - The tab id to get the active request for.
    */
   private availablePasskeyAuthCredentials$(tabId: number): Observable<Fido2CredentialView[]> {
-    return this.fido2ActiveRequestManager
-      .getActiveRequest$(tabId)
-      .pipe(map((request) => request?.credentials ?? []));
+    return this.fido2ActiveRequestManager.getActiveRequest$(tabId).pipe(
+      tap((request) => (this.hasFido2ConditionalFallback = !!request?.fallbackSupported)),
+      map((request) => request?.credentials ?? []),
+    );
   }
 
   /**
@@ -678,8 +690,11 @@ export class OverlayBackground implements OverlayBackgroundInterface {
    *
    * @param tabId - The id of the tab to abort the request for
    */
-  private async abortFido2ActiveRequest(tabId: number) {
-    this.fido2ActiveRequestManager.removeActiveRequest(tabId);
+  private async abortFido2ActiveRequest(
+    tabId: number,
+    fallbackRequested = false,
+  ) {
+    this.fido2ActiveRequestManager.removeActiveRequest(tabId, fallbackRequested);
     await this.updateOverlayCiphers(false);
   }
 
@@ -1407,6 +1422,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       ciphers: await this.getInlineMenuCipherData(),
       showInlineMenuAccountCreation: this.showInlineMenuAccountCreation(),
       showPasskeysLabels: this.showPasskeysLabelsWithinInlineMenu,
+      showMorePasskeys: this.showMorePasskeys(),
     });
   }
 
@@ -1543,6 +1559,15 @@ export class OverlayBackground implements OverlayBackgroundInterface {
   }
 
   /**
+   * Triggers a fallback to native passkeys in Conditional UI flow.
+   *
+   * @param sender - The sender of the port message
+   */
+  private async requestFido2Fallback({ sender }: chrome.runtime.Port) {
+    await this.abortFido2ActiveRequest(sender.tab.id, true);
+  }
+
+  /**
    * Triggers the opening of a vault item popout window associated
    * with the passed cipher ID.
    * @param inlineMenuCipherId - Cipher ID corresponding to the inlineMenuCiphers map. Does not correspond to the actual cipher's ID.
@@ -1617,6 +1642,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
         passwords: this.i18nService.translate("passwords"),
         logInWithPasskey: this.i18nService.translate("logInWithPasskeyAriaLabel"),
         authenticating: this.i18nService.translate("authenticating"),
+        morePasskeys: this.i18nService.translate("morePasskeys"),
       };
     }
 
@@ -2359,6 +2385,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       filledByCipherType: this.focusedFieldData?.filledByCipherType,
       showInlineMenuAccountCreation: this.showInlineMenuAccountCreation(),
       showPasskeysLabels: this.showPasskeysLabelsWithinInlineMenu,
+      showMorePasskeys: this.showMorePasskeys(),
     });
     this.updateInlineMenuPosition(
       {

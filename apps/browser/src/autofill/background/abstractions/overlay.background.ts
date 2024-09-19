@@ -242,6 +242,7 @@ export type InlineMenuListPortMessageHandlers = {
   checkAutofillInlineMenuButtonFocused: () => void;
   autofillInlineMenuBlurred: () => void;
   unlockVault: ({ port }: PortConnectionParam) => void;
+  requestFido2Fallback: ({ port }: PortConnectionParam) => void;
   fillAutofillInlineMenuCipher: ({ message, port }: PortOnMessageHandlerParams) => void;
   addNewVaultItem: ({ message, port }: PortOnMessageHandlerParams) => void;
   viewSelectedCipher: ({ message, port }: PortOnMessageHandlerParams) => void;
