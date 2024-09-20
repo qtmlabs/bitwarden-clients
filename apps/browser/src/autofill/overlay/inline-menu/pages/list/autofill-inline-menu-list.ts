@@ -44,20 +44,33 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   private lastPasskeysListItemHeight: number;
   private ciphersListHeight: number;
   private isPasskeyAuthInProgress = false;
+  private readonly initialized = new Promise<void>((resolve) => (this.setInitialized = resolve));
+  private setInitialized: () => void;
   private readonly showCiphersPerPage = 6;
   private readonly headingBorderClass = "inline-menu-list-heading--bordered";
   private readonly inlineMenuListWindowMessageHandlers: AutofillInlineMenuListWindowMessageHandlers =
     {
-      initAutofillInlineMenuList: ({ message }) => this.initAutofillInlineMenuList(message),
-      checkAutofillInlineMenuListFocused: () => this.checkInlineMenuListFocused(),
-      updateAutofillInlineMenuListCiphers: ({ message }) =>
+      initAutofillInlineMenuList: async ({ message }) => {
+        await this.initAutofillInlineMenuList(message);
+        this.setInitialized();
+      },
+      checkAutofillInlineMenuListFocused: async () => {
+        await this.initialized;
+        this.checkInlineMenuListFocused();
+      },
+      updateAutofillInlineMenuListCiphers: async ({ message }) => {
+        await this.initialized;
         this.updateListItems(
           message.ciphers,
           message.showInlineMenuAccountCreation,
           message.showPasskeysLabels,
           message.showMorePasskeys,
-        ),
-      focusAutofillInlineMenuList: () => this.focusInlineMenuList(),
+        );
+      },
+      focusAutofillInlineMenuList: async () => {
+        await this.initialized;
+        this.focusInlineMenuList();
+      },
     };
 
   constructor() {

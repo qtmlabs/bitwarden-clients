@@ -43,6 +43,8 @@ export class AutofillInlineMenuContainer {
     initAutofillInlineMenuButton: (message) => this.handleInitInlineMenuIframe(message),
     initAutofillInlineMenuList: (message) => this.handleInitInlineMenuIframe(message),
   };
+  private readonly iframeLoaded = new Promise<void>((resolve) => (this.setIframeLoaded = resolve));
+  private setIframeLoaded: () => void;
 
   constructor() {
     this.extensionOriginsSet = new Set([
@@ -71,6 +73,7 @@ export class AutofillInlineMenuContainer {
     const handleInlineMenuPageIframeLoad = () => {
       this.inlineMenuPageIframe.removeEventListener(EVENTS.LOAD, handleInlineMenuPageIframeLoad);
       this.setupPortMessageListener(message);
+      this.setIframeLoaded();
     };
     this.inlineMenuPageIframe.addEventListener(EVENTS.LOAD, handleInlineMenuPageIframeLoad);
 
@@ -114,7 +117,7 @@ export class AutofillInlineMenuContainer {
    *
    * @param event - The message event.
    */
-  private handleWindowMessage = (event: MessageEvent) => {
+  private handleWindowMessage = async (event: MessageEvent) => {
     const message = event.data;
     if (this.isForeignWindowMessage(event)) {
       return;
@@ -126,6 +129,7 @@ export class AutofillInlineMenuContainer {
     }
 
     if (this.isMessageFromParentWindow(event)) {
+      await this.iframeLoaded;
       this.postMessageToInlineMenuPage(message);
       return;
     }

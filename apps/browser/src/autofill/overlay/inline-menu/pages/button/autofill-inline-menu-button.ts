@@ -17,13 +17,26 @@ export class AutofillInlineMenuButton extends AutofillInlineMenuPageElement {
   private readonly buttonElement: HTMLButtonElement;
   private readonly logoIconElement: HTMLElement;
   private readonly logoLockedIconElement: HTMLElement;
+  private readonly initialized = new Promise<void>((resolve) => (this.setInitialized = resolve));
+  private setInitialized: () => void;
   private readonly inlineMenuButtonWindowMessageHandlers: AutofillInlineMenuButtonWindowMessageHandlers =
     {
-      initAutofillInlineMenuButton: ({ message }) => this.initAutofillInlineMenuButton(message),
-      checkAutofillInlineMenuButtonFocused: () => this.checkButtonFocused(),
-      updateAutofillInlineMenuButtonAuthStatus: ({ message }) =>
-        this.updateAuthStatus(message.authStatus),
-      updateAutofillInlineMenuColorScheme: ({ message }) => this.updatePageColorScheme(message),
+      initAutofillInlineMenuButton: async ({ message }) => {
+        await this.initAutofillInlineMenuButton(message);
+        this.setInitialized();
+      },
+      checkAutofillInlineMenuButtonFocused: async () => {
+        await this.initialized;
+        this.checkButtonFocused();
+      },
+      updateAutofillInlineMenuButtonAuthStatus: async ({ message }) => {
+        await this.initialized;
+        this.updateAuthStatus(message.authStatus);
+      },
+      updateAutofillInlineMenuColorScheme: async ({ message }) => {
+        await this.initialized;
+        this.updatePageColorScheme(message);
+      },
     };
 
   constructor() {
