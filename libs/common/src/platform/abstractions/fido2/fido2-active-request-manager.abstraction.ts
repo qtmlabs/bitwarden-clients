@@ -26,10 +26,12 @@ export type RequestCollection = Readonly<{ [tabId: number]: ActiveRequest }>;
 export abstract class Fido2ActiveRequestManager {
   getActiveRequest$: (tabId: number) => Observable<ActiveRequest | undefined>;
   getActiveRequest: (tabId: number) => ActiveRequest | undefined;
+  newInitialRequest$: Observable<void>;
   newActiveRequest: (
     tabId: number,
     credentials: Fido2CredentialView[],
     fallbackSupported: boolean,
+    isInitialRequest: boolean,
     abortController: AbortController,
   ) => Promise<RequestResult>;
   removeActiveRequest: (tabId: number, fallbackRequested?: boolean) => void;

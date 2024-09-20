@@ -211,6 +211,9 @@ export class OverlayBackground implements OverlayBackgroundInterface {
    * Initializes event observables that handle events which affect the overlay's behavior.
    */
   private initOverlayEventObservables() {
+    this.fido2ActiveRequestManager.newInitialRequest$.subscribe(() =>
+      this.updateOverlayCiphers(false),
+    );
     this.storeInlineMenuFido2CredentialsSubject
       .pipe(switchMap((tabId) => this.availablePasskeyAuthCredentials$(tabId)))
       .subscribe((credentials) => this.storeInlineMenuFido2Credentials(credentials));

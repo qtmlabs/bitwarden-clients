@@ -368,6 +368,7 @@ export class Fido2ClientService implements Fido2ClientServiceAbstraction {
   ): Promise<AssertCredentialResult> {
     let getAssertionResult;
     let assumeUserPresence = false;
+    let isInitialRequest = true;
     while (!getAssertionResult) {
       const authStatus = await firstValueFrom(this.authService.activeAccountStatus$);
       const availableCredentials =
@@ -381,8 +382,10 @@ export class Fido2ClientService implements Fido2ClientServiceAbstraction {
         tab.id,
         availableCredentials,
         params.fallbackSupported,
+        isInitialRequest,
         abortController,
       );
+      isInitialRequest = false;
 
       if (requestResult.type === Fido2ActiveRequestEvents.Refresh) {
         continue;

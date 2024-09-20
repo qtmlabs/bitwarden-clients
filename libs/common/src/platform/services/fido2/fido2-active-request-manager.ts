@@ -44,18 +44,27 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
     return this.activeRequests$.value[tabId];
   }
 
+  private newInitialRequestSubject: Subject<void> = new Subject<void>();
+
+  /**
+   * Triggered on new WebAuthn Conditional UI requests from applications.
+   */
+  newInitialRequest$: Observable<void> = this.newInitialRequestSubject;
+
   /**
    * Creates a new active fido2 request.
    *
    * @param tabId - The tab id to associate the request with.
    * @param credentials - The credentials to use for the request.
    * @param fallbackSupported - Whether the browser supports native WebAuthn.
+   * @param isInitialRequest - Whether this is not a retried request.
    * @param abortController - The abort controller to use for the request.
    */
   async newActiveRequest(
     tabId: number,
     credentials: Fido2CredentialView[],
     fallbackSupported: boolean,
+    isInitialRequest: boolean,
     abortController: AbortController,
   ): Promise<RequestResult> {
     const newRequest: ActiveRequest = {
@@ -67,6 +76,10 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
       ...existingRequests,
       [tabId]: newRequest,
     }));
+
+    if (isInitialRequest) {
+      this.newInitialRequestSubject.next();
+    }
 
     const abortListener = () => this.abortActiveRequest(tabId, false);
     abortController.signal.addEventListener("abort", abortListener);
