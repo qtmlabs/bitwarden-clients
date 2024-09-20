@@ -1253,10 +1253,18 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
       return;
     }
 
+    const previousAutoCompleteTypeWebAuthn = !!dataTarget.autoCompleteType?.includes("webauthn");
+
     updateActions[attributeName]();
+
+    const currentAutoCompleteTypeWebAuthn = !!dataTarget.autoCompleteType?.includes("webauthn");
 
     if (this.autofillFieldElements.has(element)) {
       this.autofillFieldElements.set(element, dataTarget);
+    }
+
+    if (previousAutoCompleteTypeWebAuthn !== currentAutoCompleteTypeWebAuthn) {
+      this.autofillOverlayContentService.forceUpdateFocusedFieldData(element);
     }
   }
 

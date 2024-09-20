@@ -1108,6 +1108,11 @@ class LegacyAutofillOverlayContentService implements LegacyAutofillOverlayConten
   }
 
   /**
+   * This is a no-op in the deprecated implementation.
+   */
+  forceUpdateFocusedFieldData() {}
+
+  /**
    * Destroys the autofill overlay content service. This method will
    * disconnect the mutation observers and remove all event listeners.
    */

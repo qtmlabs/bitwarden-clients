@@ -1398,7 +1398,10 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       return;
     }
 
-    if (previousFocusedFieldData?.filledByCipherType !== focusedFieldData?.filledByCipherType) {
+    if (
+      previousFocusedFieldData?.filledByCipherType !== focusedFieldData?.filledByCipherType ||
+      previousFocusedFieldData?.showPasskeys !== focusedFieldData?.showPasskeys
+    ) {
       const updateAllCipherTypes = focusedFieldData.filledByCipherType !== CipherType.Login;
       this.updateOverlayCiphers(updateAllCipherTypes).catch((error) =>
         this.logService.error(error),

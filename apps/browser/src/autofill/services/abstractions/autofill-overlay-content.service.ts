@@ -52,5 +52,6 @@ export interface AutofillOverlayContentService {
     pageDetails: AutofillPageDetails,
   ): Promise<void>;
   blurMostRecentlyFocusedField(isClosingInlineMenu?: boolean): void;
+  forceUpdateFocusedFieldData(autofillFieldElement: ElementWithOpId<FormFieldElement>): void;
   destroy(): void;
 }
