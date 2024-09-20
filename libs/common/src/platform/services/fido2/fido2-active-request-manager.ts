@@ -73,6 +73,8 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
     const requestResult = await firstValueFrom(newRequest.subject);
     abortController.signal.removeEventListener("abort", abortListener);
 
+    this.removeActiveRequest(tabId);
+
     return requestResult;
   }
 
