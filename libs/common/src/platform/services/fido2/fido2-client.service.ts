@@ -485,19 +485,13 @@ function mapToMakeCredentialParams({
       type: credential.type,
     })) ?? [];
 
-  const requireResidentKey =
-    params.authenticatorSelection?.residentKey === "required" ||
-    params.authenticatorSelection?.residentKey === "preferred" ||
-    (params.authenticatorSelection?.residentKey === undefined &&
-      params.authenticatorSelection?.requireResidentKey === true);
-
   const requireUserVerification =
     params.authenticatorSelection?.userVerification === "required" ||
     params.authenticatorSelection?.userVerification === "preferred" ||
     params.authenticatorSelection?.userVerification === undefined;
 
   return {
-    requireResidentKey,
+    requireResidentKey: true,
     requireUserVerification,
     enterpriseAttestationPossible: params.attestation === "enterprise",
     excludeCredentialDescriptorList,

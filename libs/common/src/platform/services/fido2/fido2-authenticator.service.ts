@@ -455,8 +455,7 @@ export class Fido2AuthenticatorService implements Fido2AuthenticatorServiceAbstr
         !cipher.isDeleted &&
         cipher.type === CipherType.Login &&
         cipher.login.hasFido2Credentials &&
-        cipher.login.fido2Credentials[0].rpId === rpId &&
-        cipher.login.fido2Credentials[0].discoverable,
+        cipher.login.fido2Credentials[0].rpId === rpId,
     );
   }
 }
