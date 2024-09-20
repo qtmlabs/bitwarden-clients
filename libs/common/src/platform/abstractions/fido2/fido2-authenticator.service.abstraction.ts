@@ -39,9 +39,13 @@ export abstract class Fido2AuthenticatorService {
    * Discover credentials for a given Relying Party
    *
    * @param rpId The Relying Party's ID
+   * @param credentialIds Allowed credential IDs or empty for all credentials
    * @returns A promise that resolves with an array of discoverable credentials
    */
-  silentCredentialDiscovery: (rpId: string) => Promise<Fido2CredentialView[]>;
+  silentCredentialDiscovery: (
+    rpId: string,
+    credentialIds: string[],
+  ) => Promise<Fido2CredentialView[]>;
 }
 
 export enum Fido2AlgorithmIdentifier {

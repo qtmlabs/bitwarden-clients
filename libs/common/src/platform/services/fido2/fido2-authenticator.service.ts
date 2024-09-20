@@ -373,8 +373,20 @@ export class Fido2AuthenticatorService implements Fido2AuthenticatorServiceAbstr
     );
   }
 
-  async silentCredentialDiscovery(rpId: string): Promise<Fido2CredentialView[]> {
-    const credentials = await this.findCredentialsByRp(rpId);
+  async silentCredentialDiscovery(
+    rpId: string,
+    credentialIds: string[],
+  ): Promise<Fido2CredentialView[]> {
+    const credentials =
+      credentialIds.length == 0
+        ? await this.findCredentialsByRp(rpId)
+        : await this.findCredentialsById(
+            credentialIds.map((credentialId) => ({
+              type: "public-key",
+              id: Fido2Utils.stringToBuffer(credentialId),
+            })),
+            rpId,
+          );
     return credentials.map((c) => c.login.fido2Credentials[0]);
   }
 
