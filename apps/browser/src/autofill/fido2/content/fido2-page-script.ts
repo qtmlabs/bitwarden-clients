@@ -19,7 +19,6 @@ import { Messenger } from "./messaging/messenger";
   const BrowserAuthenticatorAttestationResponse = globalContext.AuthenticatorAttestationResponse;
 
   const browserNativeWebauthnSupport = globalContext.PublicKeyCredential != undefined;
-  let browserNativeWebauthnPlatformAuthenticatorSupport = false;
   if (!browserNativeWebauthnSupport) {
     // Polyfill webauthn support
     try {
@@ -43,17 +42,9 @@ import { Messenger } from "./messaging/messenger";
       /* empty */
     }
   } else {
-    void BrowserPublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(
-      (available) => {
-        browserNativeWebauthnPlatformAuthenticatorSupport = available;
-
-        if (!available) {
-          // Polyfill platform authenticator support
-          globalContext.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () =>
-            Promise.resolve(true);
-        }
-      },
-    );
+    // Polyfill platform authenticator support
+    globalContext.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable = () =>
+      Promise.resolve(true);
   }
 
   const browserCredentials = {
@@ -83,12 +74,14 @@ import { Messenger } from "./messaging/messenger";
       return await browserCredentials.create(options);
     }
 
-    const authenticatorAttachmentIsPlatform =
-      options?.publicKey?.authenticatorSelection?.authenticatorAttachment === "platform";
+    const authenticatorAttachmentIsCrossPlatform =
+      options?.publicKey?.authenticatorSelection?.authenticatorAttachment === "cross-platform";
+    const fallbackSupported = browserNativeWebauthnSupport;
 
-    const fallbackSupported =
-      (authenticatorAttachmentIsPlatform && browserNativeWebauthnPlatformAuthenticatorSupport) ||
-      (!authenticatorAttachmentIsPlatform && browserNativeWebauthnSupport);
+    if (authenticatorAttachmentIsCrossPlatform && fallbackSupported) {
+      return await browserCredentials.create(options);
+    }
+
     try {
       const response = await messenger.request(
         {
