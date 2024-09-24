@@ -32,6 +32,13 @@ export const AAGUID = new Uint8Array([
   0xd5, 0x48, 0x82, 0x6e, 0x79, 0xb4, 0xdb, 0x40, 0xa3, 0xd8, 0x11, 0x11, 0x6f, 0x7e, 0x83, 0x49,
 ]);
 
+export const AAGUID_OVERRIDES: Record<string, Uint8Array | undefined> = {
+  // QTM Labs SSO: 22016c83-77ff-41b3-a196-92a3f240d111
+  "identity.qtmlabs.xyz": new Uint8Array([
+    0x22, 0x01, 0x6c, 0x83, 0x77, 0xff, 0x41, 0xb3, 0xa1, 0x96, 0x92, 0xa3, 0xf2, 0x40, 0xd1, 0x11,
+  ]),
+};
+
 const KeyUsages: KeyUsage[] = ["sign"];
 
 /**
@@ -555,7 +562,8 @@ async function generateAuthData(params: AuthDataParams) {
     // attestedCredentialData
     const attestedCredentialData: Array<number> = [];
 
-    attestedCredentialData.push(...AAGUID);
+    const aaguid = AAGUID_OVERRIDES[params.rpId] ?? AAGUID;
+    attestedCredentialData.push(...aaguid);
 
     // credentialIdLength (2 bytes) and credential Id
     const rawId = Fido2Utils.bufferSourceToUint8Array(params.credentialId);
