@@ -48,21 +48,17 @@ import { MessageWithMetadata, Messenger } from "./messaging/messenger";
 
     try {
       if (message.type === MessageType.CredentialCreationRequest) {
-        return handleCredentialCreationRequestMessage(
+        return await handleCredentialCreationRequestMessage(
           requestId,
           message.data as InsecureCreateCredentialParams,
         );
       }
 
       if (message.type === MessageType.CredentialGetRequest) {
-        return handleCredentialGetRequestMessage(
+        return await handleCredentialGetRequestMessage(
           requestId,
           message.data as InsecureAssertCredentialParams,
         );
-      }
-
-      if (message.type === MessageType.AbortRequest) {
-        return sendExtensionMessage("fido2AbortRequest", { abortedRequestId: requestId });
       }
     } finally {
       abortController.signal.removeEventListener("abort", abortHandler);
