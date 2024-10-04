@@ -312,7 +312,7 @@ export class Fido2Background implements Fido2BackgroundInterface {
     Promise.resolve(messageResponse)
       .then(
         (response) => sendResponse(response),
-        (error) => sendResponse({ error: { ...error, message: error.message } }),
+        (error) => sendResponse({ error: { ...error, message: error.message, name: error.name } }),
       )
       .catch(this.logService.error);
 
