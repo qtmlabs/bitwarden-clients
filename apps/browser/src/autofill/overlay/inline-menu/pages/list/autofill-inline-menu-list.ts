@@ -115,7 +115,6 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
 
     this.authStatus = authStatus;
     this.inlineMenuFillType = inlineMenuFillType;
-    this.showPasskeysLabels = showPasskeysLabels;
 
     const themeClass = `theme_${theme}`;
     globalThis.document.documentElement.classList.add(themeClass);
@@ -148,6 +147,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     this.updateListItems({
       ciphers,
       showInlineMenuAccountCreation,
+      showPasskeysLabels,
       showMorePasskeys,
     });
   }
@@ -539,6 +539,7 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   private updateListItems({
     ciphers = [],
     showInlineMenuAccountCreation = false,
+    showPasskeysLabels = false,
     showMorePasskeys = false,
   }: UpdateAutofillInlineMenuListCiphersParams) {
     if (this.isPasskeyAuthInProgress) {
@@ -548,7 +549,10 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
     this.ciphers = this.getFilteredCiphersForTotpField(ciphers);
     this.currentCipherIndex = 0;
     this.showInlineMenuAccountCreation = showInlineMenuAccountCreation;
+    this.showPasskeysLabels = showPasskeysLabels;
     this.showMorePasskeys = showMorePasskeys;
+    this.passkeysHeadingElement = null;
+    this.loginHeadingElement = null;
     this.resetInlineMenuContainer();
 
     if (!this.ciphers?.length) {
