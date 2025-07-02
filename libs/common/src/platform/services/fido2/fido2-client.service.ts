@@ -414,6 +414,7 @@ export class Fido2ClientService<
   ): Promise<AssertCredentialResult> {
     let getAssertionResult;
     let assumeUserPresence = false;
+    let isInitialRequest = true;
     while (!getAssertionResult) {
       const authStatus = await firstValueFrom(this.authService.activeAccountStatus$);
       const availableCredentials =
@@ -430,8 +431,10 @@ export class Fido2ClientService<
         (tab as any).id,
         availableCredentials,
         params.fallbackSupported,
+        isInitialRequest,
         abortController,
       );
+      isInitialRequest = false;
 
       if (requestResult.type === Fido2ActiveRequestEvents.Refresh) {
         continue;

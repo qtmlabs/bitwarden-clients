@@ -1381,6 +1381,7 @@ describe("OverlayBackground", () => {
         tab.id,
         passkeyCipher.login.fido2Credentials,
         true,
+        false,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -1470,6 +1471,7 @@ describe("OverlayBackground", () => {
         tab.id,
         passkeyCipher.login.fido2Credentials,
         true,
+        false,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -1539,6 +1541,7 @@ describe("OverlayBackground", () => {
         tab.id,
         passkeyCipher.login.fido2Credentials,
         true,
+        false,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -3776,6 +3779,7 @@ describe("OverlayBackground", () => {
               sender.tab.id,
               cipher1.login.fido2Credentials,
               true,
+              false,
               new AbortController(),
             );
           });

@@ -326,6 +326,9 @@ export class OverlayBackground implements OverlayBackgroundInterface {
         ),
       )
       .subscribe();
+    this.fido2ActiveRequestManager.newInitialRequest$.subscribe(() =>
+      this.updateOverlayCiphers(false),
+    );
     this.storeInlineMenuFido2Credentials$
       .pipe(switchMap((tabId) => this.availablePasskeyAuthCredentials$(tabId)))
       .subscribe((credentials) => this.storeInlineMenuFido2Credentials(credentials));
