@@ -413,7 +413,6 @@ export class Fido2ClientService<
     clientDataJSONBytes: Uint8Array<ArrayBuffer>,
   ): Promise<AssertCredentialResult> {
     let getAssertionResult;
-    let assumeUserPresence = false;
     let isInitialRequest = true;
     while (!getAssertionResult) {
       const authStatus = await firstValueFrom(this.authService.activeAccountStatus$);
@@ -450,8 +449,6 @@ export class Fido2ClientService<
         break;
       }
 
-      assumeUserPresence = true;
-
       const clientDataHash = await crypto.subtle.digest({ name: "SHA-256" }, clientDataJSONBytes);
       const getAssertionParams = mapToGetAssertionParams({
         params: {
@@ -462,7 +459,6 @@ export class Fido2ClientService<
           fallbackSupported: false,
         },
         clientDataHash,
-        assumeUserPresence,
       });
 
       try {
