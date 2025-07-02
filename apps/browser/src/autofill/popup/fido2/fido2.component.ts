@@ -48,6 +48,7 @@ import { ZonedMessageListenerService } from "../../../platform/browser/zoned-mes
 import { PopupHeaderComponent } from "../../../platform/popup/layout/popup-header.component";
 import { PopupPageComponent } from "../../../platform/popup/layout/popup-page.component";
 import { VaultPopoutType } from "../../../vault/popup/utils/vault-popout-window";
+import { Fido2UserVerificationService } from "../../../vault/services/fido2-user-verification.service";
 import {
   BrowserFido2Message,
   BrowserFido2UserInterfaceSession,
@@ -111,6 +112,7 @@ export class Fido2Component implements OnInit, OnDestroy {
   protected sessionId: string | undefined = undefined;
   protected showNewPasskeyButton: boolean = false;
   protected url: string | undefined = undefined;
+  protected fromLock?: boolean;
 
   constructor(
     private router: Router,
@@ -124,6 +126,7 @@ export class Fido2Component implements OnInit, OnDestroy {
     private browserMessagingApi: ZonedMessageListenerService,
     private passwordRepromptService: PasswordRepromptService,
     private accountService: AccountService,
+    private fido2UserVerificationService: Fido2UserVerificationService,
   ) {}
 
   ngOnInit() {
@@ -135,6 +138,7 @@ export class Fido2Component implements OnInit, OnDestroy {
         sessionId: queryParamMap.get("sessionId") ?? undefined,
         senderTabId: queryParamMap.get("senderTabId") ?? undefined,
         senderUrl: queryParamMap.get("senderUrl") ?? undefined,
+        fromLock: queryParamMap.get("fromLock") ?? undefined,
       })),
     );
 
@@ -147,6 +151,7 @@ export class Fido2Component implements OnInit, OnDestroy {
           this.sessionId = queryParams.sessionId;
           this.senderTabId = queryParams.senderTabId;
           this.url = queryParams.senderUrl;
+          this.fromLock = queryParams.fromLock === "true";
           // For a 'NewSessionCreatedRequest', abort if it doesn't belong to the current session.
           if (
             message.type === BrowserFido2MessageTypes.NewSessionCreatedRequest &&
@@ -281,9 +286,11 @@ export class Fido2Component implements OnInit, OnDestroy {
     }
 
     if (data?.type === BrowserFido2MessageTypes.PickCredentialRequest) {
-      // TODO: Revert to use fido2 user verification service once user verification for passkeys is approved for production.
-      // PM-4577 - https://github.com/bitwarden/clients/pull/8746
-      const userVerified = await this.handleUserVerification(data.userVerification, this.cipher);
+      const userVerified = await this.fido2UserVerificationService.handleUserVerification(
+        data.userVerification,
+        this.cipher,
+        this.fromLock,
+      );
 
       this.send({
         sessionId: this.sessionId,
@@ -304,9 +311,11 @@ export class Fido2Component implements OnInit, OnDestroy {
         }
       }
 
-      // TODO: Revert to use fido2 user verification service once user verification for passkeys is approved for production.
-      // PM-4577 - https://github.com/bitwarden/clients/pull/8746
-      const userVerified = await this.handleUserVerification(data.userVerification, this.cipher);
+      const userVerified = await this.fido2UserVerificationService.handleUserVerification(
+        data.userVerification,
+        this.cipher,
+        this.fromLock,
+      );
 
       this.send({
         sessionId: this.sessionId,
@@ -324,19 +333,24 @@ export class Fido2Component implements OnInit, OnDestroy {
 
     if (data?.type === BrowserFido2MessageTypes.ConfirmNewCredentialRequest) {
       const name = data.credentialName || data.rpId;
-      // TODO: Revert to check for user verification once user verification for passkeys is approved for production.
-      // PM-4577 - https://github.com/bitwarden/clients/pull/8746
-      await this.createNewCipher(name, data.userName);
+      const userVerified = await this.fido2UserVerificationService.handleUserVerification(
+        data.userVerification,
+        this.cipher,
+        this.fromLock,
+      );
+
+      if (!data.userVerification || userVerified) {
+        await this.createNewCipher(name, data.userName);
+      }
 
       if (this.sessionId == null || this.cipher == null) {
         return;
       }
-      // We are bypassing user verification pending approval.
       this.send({
         sessionId: this.sessionId,
         cipherId: this.cipher.id,
         type: BrowserFido2MessageTypes.ConfirmNewCredentialResponse,
-        userVerified: data.userVerification,
+        userVerified,
       });
     }
 
@@ -366,6 +380,7 @@ export class Fido2Component implements OnInit, OnDestroy {
           username: data.userName,
           senderTabId: this.senderTabId,
           sessionId: this.sessionId,
+          fromLock: this.fromLock,
           userVerification: data.userVerification,
           singleActionPopout: `${VaultPopoutType.fido2Popout}_${this.sessionId}`,
         },
@@ -478,20 +493,6 @@ export class Fido2Component implements OnInit, OnDestroy {
     } catch (e) {
       this.logService.error(e);
     }
-  }
-
-  // TODO: Remove and use fido2 user verification service once user verification for passkeys is approved for production.
-  private async handleUserVerification(
-    userVerificationRequested: boolean,
-    cipher: CipherView,
-  ): Promise<boolean> {
-    const masterPasswordRepromptRequired = cipher && cipher.reprompt !== 0;
-
-    if (masterPasswordRepromptRequired) {
-      return await this.passwordRepromptService.showPasswordPrompt();
-    }
-
-    return userVerificationRequested;
   }
 
   private send(msg: BrowserFido2Message) {

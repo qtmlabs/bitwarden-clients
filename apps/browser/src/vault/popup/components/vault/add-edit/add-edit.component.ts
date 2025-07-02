@@ -55,6 +55,7 @@ import { PopupHeaderComponent } from "../../../../../platform/popup/layout/popup
 import { PopupPageComponent } from "../../../../../platform/popup/layout/popup-page.component";
 import { PopupRouterCacheService } from "../../../../../platform/popup/view-cache/popup-router-cache.service";
 import { PopupCloseWarningService } from "../../../../../popup/services/popup-close-warning.service";
+import { Fido2UserVerificationService } from "../../../../services/fido2-user-verification.service";
 import { BrowserCipherFormGenerationService } from "../../../services/browser-cipher-form-generation.service";
 import { BrowserTotpCaptureService } from "../../../services/browser-totp-capture.service";
 import { VaultPopupAfterDeletionNavigationService } from "../../../services/vault-popup-after-deletion-navigation.service";
@@ -252,6 +253,7 @@ export class AddEditComponent implements OnInit, OnDestroy {
     private afterDeletionNavigationService: VaultPopupAfterDeletionNavigationService,
     private configService: ConfigService,
     private vaultPopupAutofillService: VaultPopupAutofillService,
+    private fido2UserVerificationService: Fido2UserVerificationService,
   ) {
     this.subscribeToParams();
   }
@@ -319,8 +321,14 @@ export class AddEditComponent implements OnInit, OnDestroy {
       return true;
     }
 
-    // TODO use fido2 user verification service once user verification for passkeys is approved for production.
-    // We are bypassing user verification pending approval for production.
+    if (this.fido2PopoutSessionData.userVerification) {
+      return this.fido2UserVerificationService.handleUserVerification(
+        true,
+        null,
+        this.fido2PopoutSessionData.fromLock,
+      );
+    }
+
     return true;
   };
 
