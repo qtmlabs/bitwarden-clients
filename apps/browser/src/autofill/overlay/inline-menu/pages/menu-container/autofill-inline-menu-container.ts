@@ -73,6 +73,8 @@ export class AutofillInlineMenuContainer {
     initAutofillInlineMenuList: (message: InitAutofillInlineMenuElementMessage) =>
       this.handleInitInlineMenuIframe(message),
   };
+  private readonly iframeLoaded = new Promise<void>((resolve) => (this.setIframeLoaded = resolve));
+  private setIframeLoaded: () => void;
 
   constructor() {
     this.token = generateRandomChars(32);
@@ -113,6 +115,7 @@ export class AutofillInlineMenuContainer {
     const handleInlineMenuPageIframeLoad = () => {
       this.inlineMenuPageIframe.removeEventListener(EVENTS.LOAD, handleInlineMenuPageIframeLoad);
       this.setupPortMessageListener(message);
+      this.setIframeLoaded();
     };
     this.inlineMenuPageIframe.addEventListener(EVENTS.LOAD, handleInlineMenuPageIframeLoad);
 
@@ -209,7 +212,7 @@ export class AutofillInlineMenuContainer {
    *
    * @param event - The message event.
    */
-  private handleWindowMessage = (event: MessageEvent<AutofillInlineMenuContainerWindowMessage>) => {
+  private handleWindowMessage = async (event: MessageEvent<AutofillInlineMenuContainerWindowMessage>) => {
     const message = event.data;
     if (!message?.command) {
       return;
@@ -233,6 +236,7 @@ export class AutofillInlineMenuContainer {
     }
 
     if (this.isMessageFromParentWindow(event)) {
+      await this.iframeLoaded;
       // messages from parent window are trusted and forwarded to iframe
       this.postMessageToInlineMenuPage(message);
       return;

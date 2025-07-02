@@ -64,17 +64,36 @@ export class AutofillInlineMenuList extends AutofillInlineMenuPageElement {
   private isPasskeyAuthInProgress = false;
   private authStatus: AuthenticationStatus = AuthenticationStatus.Locked;
   private isInitialized = false;
+  private readonly initialized = new Promise<void>((resolve) => (this.setInitialized = resolve));
+  private setInitialized: () => void;
   private readonly showCiphersPerPage = 6;
   private readonly headingBorderClass = "inline-menu-list-heading--bordered";
   private readonly inlineMenuListWindowMessageHandlers: AutofillInlineMenuListWindowMessageHandlers =
     {
-      initAutofillInlineMenuList: ({ message }) => this.initAutofillInlineMenuList(message),
-      checkAutofillInlineMenuListFocused: () => this.checkInlineMenuListFocused(),
-      updateAutofillInlineMenuListCiphers: ({ message }) => this.updateListItems(message),
-      updateAutofillInlineMenuGeneratedPassword: ({ message }) =>
-        this.handleUpdateAutofillInlineMenuGeneratedPassword(message),
-      showSaveLoginInlineMenuList: () => this.handleShowSaveLoginInlineMenuList(),
-      focusAutofillInlineMenuList: () => this.focusInlineMenuList(),
+      initAutofillInlineMenuList: async ({ message }) => {
+        await this.initAutofillInlineMenuList(message);
+        this.setInitialized();
+      },
+      checkAutofillInlineMenuListFocused: async () => {
+        await this.initialized;
+        this.checkInlineMenuListFocused();
+      },
+      updateAutofillInlineMenuListCiphers: async ({ message }) => {
+        await this.initialized;
+        this.updateListItems(message);
+      },
+      updateAutofillInlineMenuGeneratedPassword: async ({ message }) => {
+        await this.initialized;
+        this.handleUpdateAutofillInlineMenuGeneratedPassword(message);
+      },
+      showSaveLoginInlineMenuList: async () => {
+        await this.initialized;
+        this.handleShowSaveLoginInlineMenuList();
+      },
+      focusAutofillInlineMenuList: async () => {
+        await this.initialized;
+        this.focusInlineMenuList();
+      },
     };
 
   constructor() {
