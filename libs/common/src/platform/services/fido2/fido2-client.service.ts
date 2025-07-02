@@ -419,7 +419,10 @@ export class Fido2ClientService<
       const authStatus = await firstValueFrom(this.authService.activeAccountStatus$);
       const availableCredentials =
         authStatus === AuthenticationStatus.Unlocked
-          ? await this.authenticator.silentCredentialDiscovery(params.rpId)
+          ? await this.authenticator.silentCredentialDiscovery(
+              params.rpId,
+              params.allowedCredentials.map((credential) => credential.id),
+            )
           : [];
       this.logService?.info(
         `[Fido2Client] started mediated request, available credentials: ${availableCredentials.length}`,

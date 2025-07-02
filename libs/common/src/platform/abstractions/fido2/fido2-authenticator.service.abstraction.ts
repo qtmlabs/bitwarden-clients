@@ -39,9 +39,13 @@ export abstract class Fido2AuthenticatorService<ParentWindowReference> {
    * Discover credentials for a given Relying Party
    *
    * @param rpId The Relying Party's ID
+   * @param credentialIds Allowed credential IDs or empty for all credentials
    * @returns A promise that resolves with an array of discoverable credentials
    */
-  abstract silentCredentialDiscovery(rpId: string): Promise<Fido2CredentialView[]>;
+  abstract silentCredentialDiscovery(
+    rpId: string,
+    credentialIds: string[],
+  ): Promise<Fido2CredentialView[]>;
 }
 
 // FIXME: update to use a const object instead of a typescript enum
