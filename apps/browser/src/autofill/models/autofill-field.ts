@@ -124,8 +124,6 @@ export default class AutofillField {
 
   inlineMenuFillType?: InlineMenuFillType;
 
-  showPasskeys?: boolean;
-
   fieldQualifier?: AutofillFieldQualifierType | AutofillTargetingRuleType;
 
   /**

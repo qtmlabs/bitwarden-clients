@@ -59,5 +59,6 @@ export interface AutofillOverlayContentService extends AutofillMonitor {
   getUnownedTopLayerItems(includeCandidates?: boolean): NodeListOf<Element> | undefined;
   refreshMenuLayerPosition(): void;
   clearUserFilledFields(): void;
+  forceUpdateFocusedFieldData(autofillFieldElement: ElementWithOpId<FormFieldElement>): void;
   destroy(): void;
 }

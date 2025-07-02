@@ -1080,7 +1080,7 @@ export class AutofillOverlayContentService implements AutofillOverlayContentServ
       focusedFieldStyles: { paddingRight, paddingLeft },
       focusedFieldRects: { width, height, top, left },
       inlineMenuFillType: autofillFieldData?.inlineMenuFillType,
-      showPasskeys: !!autofillFieldData?.showPasskeys,
+      showPasskeys: !!autofillFieldData?.autoCompleteType?.includes("webauthn"),
       accountCreationFieldType: autofillFieldData?.accountCreationFieldType,
       focusedFieldForm: autofillFieldData?.form ?? undefined,
       focusedFieldOpid: autofillFieldData?.opid,
@@ -1187,6 +1187,7 @@ export class AutofillOverlayContentService implements AutofillOverlayContentServ
       this.inlineMenuFieldQualificationService.isFieldForLoginForm(autofillFieldData, pageDetails)
     ) {
       void this.setQualifiedLoginFillType(autofillFieldData);
+      autofillFieldData.showPasskeys = autofillFieldData.autoCompleteType.includes("webauthn");
       return false;
     }
 
@@ -1952,6 +1953,15 @@ export class AutofillOverlayContentService implements AutofillOverlayContentServ
   private clearCloseInlineMenuOnRedirectTimeout() {
     if (this.closeInlineMenuOnRedirectTimeout) {
       globalThis.clearTimeout(this.closeInlineMenuOnRedirectTimeout);
+    }
+  }
+
+  /**
+   * Force an update to the background focused field data.
+   */
+  async forceUpdateFocusedFieldData(autofillFieldElement: ElementWithOpId<FormFieldElement>) {
+    if (this.mostRecentlyFocusedField == autofillFieldElement) {
+      await this.updateMostRecentlyFocusedField(autofillFieldElement);
     }
   }
 

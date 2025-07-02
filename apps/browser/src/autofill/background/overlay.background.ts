@@ -2101,7 +2101,8 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       // may want to generalize this logic if cipher inline menu types exceed [general cipher, TOTP]
       [focusedFieldData, previousFocusedFieldData].filter(
         (fd) => fd?.accountCreationFieldType === InlineMenuAccountCreationFieldType.Totp,
-      ).length === 1
+      ).length === 1 ||
+      previousFocusedFieldData?.showPasskeys !== focusedFieldData?.showPasskeys
     ) {
       const updateAllCipherTypes = !this.focusedFieldMatchesFillType(
         CipherType.Login,
