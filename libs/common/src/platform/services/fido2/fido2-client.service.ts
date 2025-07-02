@@ -269,7 +269,7 @@ export class Fido2ClientService<
       clientDataJSON: Fido2Utils.arrayToString(clientDataJSONBytes),
       publicKey: Fido2Utils.arrayToString(makeCredentialResult.publicKey),
       publicKeyAlgorithm: makeCredentialResult.publicKeyAlgorithm,
-      transports: ["internal", "hybrid"],
+      transports: ["hybrid", "internal"],
       extensions: { credProps },
     };
   }
