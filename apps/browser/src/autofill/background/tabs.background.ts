@@ -111,6 +111,7 @@ export default class TabsBackground {
    */
   private handleTabOnRemoved = async (tabId: number) => {
     this.overlayBackground.removePageDetails(tabId);
+    this.main.fido2ActiveRequestManager.removeActiveRequest(tabId);
   };
 
   /**

@@ -3395,6 +3395,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
     const subFrames = this.subFrameOffsetsForTab[tabId];
     if (frameId === 0) {
       this.removePageDetails(tabId);
+      this.fido2ActiveRequestManager.removeActiveRequest(tabId);
       if (subFrames) {
         subFrames.clear();
         delete this.subFrameOffsetsForTab[tabId];
