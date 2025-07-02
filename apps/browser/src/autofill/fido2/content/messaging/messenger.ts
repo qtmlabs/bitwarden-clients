@@ -77,11 +77,7 @@ export class Messenger {
         localPort.onmessage = (event: MessageEvent<MessageWithMetadata>) => resolve(event.data);
       });
 
-      const abortListener = () =>
-        localPort.postMessage({
-          metadata: { SENDER },
-          type: MessageTypes.AbortRequest,
-        });
+      const abortListener = () => localPort.postMessage({ type: MessageTypes.AbortRequest });
       abortSignal?.addEventListener("abort", abortListener);
 
       this.broadcastChannel.postMessage(
@@ -91,6 +87,7 @@ export class Messenger {
       const response = await promise;
 
       abortSignal?.removeEventListener("abort", abortListener);
+      abortSignal?.throwIfAborted();
 
       if (response.type === MessageTypes.ErrorResponse) {
         const error = new Error();
