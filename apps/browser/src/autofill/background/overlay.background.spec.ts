@@ -1380,6 +1380,7 @@ describe("OverlayBackground", () => {
       void fido2ActiveRequestManager.newActiveRequest(
         tab.id,
         passkeyCipher.login.fido2Credentials,
+        true,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -1468,6 +1469,7 @@ describe("OverlayBackground", () => {
       void fido2ActiveRequestManager.newActiveRequest(
         tab.id,
         passkeyCipher.login.fido2Credentials,
+        true,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -1536,6 +1538,7 @@ describe("OverlayBackground", () => {
       void fido2ActiveRequestManager.newActiveRequest(
         tab.id,
         passkeyCipher.login.fido2Credentials,
+        true,
         new AbortController(),
       );
       overlayBackground["focusedFieldData"] = createFocusedFieldDataMock({
@@ -3772,6 +3775,7 @@ describe("OverlayBackground", () => {
             void fido2ActiveRequestManager.newActiveRequest(
               sender.tab.id,
               cipher1.login.fido2Credentials,
+              true,
               new AbortController(),
             );
           });

@@ -25,6 +25,7 @@ import {
 import {
   AssertCredentialParams,
   AssertCredentialResult,
+  ConditionalFallbackRequestedError,
   CreateCredentialParams,
   CreateCredentialResult,
   FallbackRequestedError,
@@ -428,6 +429,7 @@ export class Fido2ClientService<
         // Consider moving requestManager into browser and adding support for ParentWindowReference => tab.id
         (tab as any).id,
         availableCredentials,
+        params.fallbackSupported,
         abortController,
       );
 
@@ -436,17 +438,23 @@ export class Fido2ClientService<
       }
 
       if (requestResult.type === Fido2ActiveRequestEvents.Abort) {
+        if (requestResult.fallbackRequested) {
+          throw new ConditionalFallbackRequestedError();
+        }
         break;
       }
 
-      params.allowedCredentials = [
-        { id: Fido2Utils.arrayToString(guidToRawFormat(requestResult.credentialId)) },
-      ];
       assumeUserPresence = true;
 
       const clientDataHash = await crypto.subtle.digest({ name: "SHA-256" }, clientDataJSONBytes);
       const getAssertionParams = mapToGetAssertionParams({
-        params,
+        params: {
+          ...params,
+          allowedCredentials: [
+            { id: Fido2Utils.arrayToString(guidToRawFormat(requestResult.credentialId)) },
+          ],
+          fallbackSupported: false,
+        },
         clientDataHash,
         assumeUserPresence,
       });

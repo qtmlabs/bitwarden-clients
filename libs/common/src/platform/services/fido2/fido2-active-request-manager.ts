@@ -49,15 +49,18 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
    *
    * @param tabId - The tab id to associate the request with.
    * @param credentials - The credentials to use for the request.
+   * @param fallbackSupported - Whether the browser supports native WebAuthn.
    * @param abortController - The abort controller to use for the request.
    */
   async newActiveRequest(
     tabId: number,
     credentials: Fido2CredentialView[],
+    fallbackSupported: boolean,
     abortController: AbortController,
   ): Promise<RequestResult> {
     const newRequest: ActiveRequest = {
       credentials,
+      fallbackSupported,
       subject: new Subject(),
     };
     this.updateRequests((existingRequests) => ({
@@ -65,7 +68,7 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
       [tabId]: newRequest,
     }));
 
-    const abortListener = () => this.abortActiveRequest(tabId);
+    const abortListener = () => this.abortActiveRequest(tabId, false);
     abortController.signal.addEventListener("abort", abortListener);
     const requestResult = firstValueFrom(newRequest.subject);
     abortController.signal.removeEventListener("abort", abortListener);
@@ -77,9 +80,10 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
    * Removes and aborts the active request associated with a given tab id.
    *
    * @param tabId - The tab id to abort the active request for.
+   * @param fallbackRequested - Whether the user requested a fallback to native passkeys.
    */
-  removeActiveRequest(tabId: number) {
-    this.abortActiveRequest(tabId);
+  removeActiveRequest(tabId: number, fallbackRequested = false) {
+    this.abortActiveRequest(tabId, fallbackRequested);
     this.updateRequests((existingRequests) => {
       const newRequests = { ...existingRequests };
       delete newRequests[tabId];
@@ -92,7 +96,7 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
    */
   removeAllActiveRequests() {
     Object.keys(this.activeRequests$.value).forEach((tabId) => {
-      this.abortActiveRequest(Number(tabId));
+      this.abortActiveRequest(Number(tabId), false);
     });
     this.updateRequests(() => ({}));
   }
@@ -102,8 +106,11 @@ export class Fido2ActiveRequestManager implements Fido2ActiveRequestManagerAbstr
    *
    * @param tabId - The tab id to abort the active request for.
    */
-  private abortActiveRequest(tabId: number): void {
-    this.activeRequests$.value[tabId]?.subject.next({ type: Fido2ActiveRequestEvents.Abort });
+  private abortActiveRequest(tabId: number, fallbackRequested: boolean): void {
+    this.activeRequests$.value[tabId]?.subject.next({
+      type: Fido2ActiveRequestEvents.Abort,
+      fallbackRequested,
+    });
     this.activeRequests$.value[tabId]?.subject.error(
       new DOMException("The operation either timed out or was not allowed.", "AbortError"),
     );

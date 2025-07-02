@@ -15,6 +15,7 @@ import {
   switchMap,
   throttleTime,
   timeout,
+  tap,
 } from "rxjs";
 import { parse } from "tldts";
 
@@ -168,6 +169,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
     AutofillOverlayPort.List,
     AutofillOverlayPort.ListMessageConnector,
   ]);
+  private hasFido2ConditionalFallback: boolean = false;
   private readonly extensionMessageHandlers: OverlayBackgroundExtensionMessageHandlers = {
     autofillOverlayElementClosed: ({ message, sender }) =>
       this.overlayElementClosed(message, sender),
@@ -236,6 +238,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       this.checkInlineMenuButtonFocused(port.sender),
     autofillInlineMenuBlurred: ({ port }) => this.checkInlineMenuButtonFocused(port.sender),
     unlockVault: ({ port }) => this.unlockVault(port),
+    requestFido2Fallback: ({ port }) => this.requestFido2Fallback(port),
     fillAutofillInlineMenuCipher: ({ message, port }) => this.fillInlineMenuCipher(message, port),
     addNewVaultItem: ({ message, port }) => this.getNewVaultItemDetails(message, port),
     viewSelectedCipher: ({ message, port }) => this.viewSelectedCipher(message, port),
@@ -528,6 +531,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       showInlineMenuAccountCreation: this.shouldShowInlineMenuAccountCreation(),
       showPasskeysLabels: this.showPasskeysLabelsWithinInlineMenu,
       focusedFieldHasValue: await this.checkFocusedFieldHasValue(tab),
+      showMorePasskeys: this.showMorePasskeys(),
     });
   }
 
@@ -989,6 +993,13 @@ export class OverlayBackground implements OverlayBackgroundInterface {
   }
 
   /**
+   * Determines whether the "More passkeys" button should be shown.
+   */
+  private showMorePasskeys(): boolean {
+    return this.hasFido2ConditionalFallback && this.focusedFieldData?.showPasskeys;
+  }
+
+  /**
    * Stores the credential ids associated with a FIDO2 conditional mediated ui request.
    *
    * @param credentials - The FIDO2 credentials to store
@@ -1008,9 +1019,10 @@ export class OverlayBackground implements OverlayBackgroundInterface {
    * @param tabId - The tab id to get the active request for.
    */
   private availablePasskeyAuthCredentials$(tabId: number): Observable<Fido2CredentialView[]> {
-    return this.fido2ActiveRequestManager
-      .getActiveRequest$(tabId)
-      .pipe(map((request) => request?.credentials ?? []));
+    return this.fido2ActiveRequestManager.getActiveRequest$(tabId).pipe(
+      tap((request) => (this.hasFido2ConditionalFallback = !!request?.fallbackSupported)),
+      map((request) => request?.credentials ?? []),
+    );
   }
 
   /**
@@ -1018,11 +1030,11 @@ export class OverlayBackground implements OverlayBackgroundInterface {
    *
    * @param tabId - The id of the tab to abort the request for
    */
-  private async abortFido2ActiveRequest(tabId: number | undefined) {
+  private async abortFido2ActiveRequest(tabId: number | undefined, fallbackRequested = false) {
     if (tabId === null || tabId === undefined) {
       return;
     }
-    this.fido2ActiveRequestManager.removeActiveRequest(tabId);
+    this.fido2ActiveRequestManager.removeActiveRequest(tabId, fallbackRequested);
     await this.updateOverlayCiphers(false);
   }
 
@@ -2544,6 +2556,15 @@ export class OverlayBackground implements OverlayBackgroundInterface {
   }
 
   /**
+   * Triggers a fallback to native passkeys in Conditional UI flow.
+   *
+   * @param sender - The sender of the port message
+   */
+  private async requestFido2Fallback({ sender }: chrome.runtime.Port) {
+    await this.abortFido2ActiveRequest(sender.tab.id, true);
+  }
+
+  /**
    * Triggers the opening of a vault item popout window associated
    * with the passed cipher ID.
    * @param inlineMenuCipherId - Cipher ID corresponding to the inlineMenuCiphers map. Does not correspond to the actual cipher's ID.
@@ -2616,6 +2637,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
         "generatedPassword",
         "lowercaseAriaLabel",
         "logInWithPasskeyAriaLabel",
+        "morePasskeys",
         "newCard",
         "newIdentity",
         "newItem",
@@ -3455,6 +3477,7 @@ export class OverlayBackground implements OverlayBackgroundInterface {
       showInlineMenuAccountCreation,
       authStatus,
       extensionOrigin,
+      showMorePasskeys: this.showMorePasskeys(),
     });
     if (port.sender) {
       this.updateInlineMenuPosition(

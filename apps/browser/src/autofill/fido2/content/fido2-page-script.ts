@@ -147,52 +147,7 @@ import { Messenger } from "./messaging/messenger";
       return await browserCredentials.get(options);
     }
 
-    const abortSignal = options?.signal || new AbortController().signal;
     const fallbackSupported = browserNativeWebauthnSupport;
-
-    if (options?.mediation && options.mediation === "conditional") {
-      const internalAbortControllers = [new AbortController(), new AbortController()];
-      const bitwardenResponse = async (internalAbortController: AbortController) => {
-        try {
-          const abortListener = () =>
-            messenger.request({
-              type: MessageTypes.AbortRequest,
-              abortedRequestId: abortSignal.toString(),
-            });
-          internalAbortController.signal.addEventListener("abort", abortListener);
-          const response = await messenger.request(
-            {
-              type: MessageTypes.CredentialGetRequest,
-              data: WebauthnUtils.mapCredentialRequestOptions(options, fallbackSupported),
-            },
-            internalAbortController.signal,
-          );
-          internalAbortController.signal.removeEventListener("abort", abortListener);
-          if (response.type !== MessageTypes.CredentialGetResponse || !response.result) {
-            throw new Error("Something went wrong.");
-          }
-
-          return WebauthnUtils.mapCredentialAssertResult(response.result);
-        } catch {
-          // Ignoring error
-        }
-      };
-      const browserResponse = (internalAbortController: AbortController) =>
-        browserCredentials.get({ ...options, signal: internalAbortController.signal });
-      const abortListener = () => {
-        internalAbortControllers.forEach((controller) => controller.abort());
-      };
-      abortSignal.addEventListener("abort", abortListener);
-
-      const response = await Promise.race([
-        bitwardenResponse(internalAbortControllers[0]),
-        browserResponse(internalAbortControllers[1]),
-      ]);
-      abortSignal.removeEventListener("abort", abortListener);
-      internalAbortControllers.forEach((controller) => controller.abort());
-
-      return response ?? null;
-    }
 
     try {
       const response = await messenger.request(
@@ -216,7 +171,10 @@ import { Messenger } from "./messaging/messenger";
         error.fallbackRequested
       ) {
         await waitForFocus();
-        return await browserCredentials.get(options);
+        return await browserCredentials.get({
+          ...options,
+          mediation: error.conditionalFallbackRequested ? "required" : options.mediation,
+        });
       }
 
       throw rehydrateDOMException(error);

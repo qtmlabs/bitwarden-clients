@@ -23,6 +23,7 @@ const ALLOWED_BG_COMMANDS = new Set<string>([
   "redirectAutofillInlineMenuFocusOut",
   "refreshGeneratedPassword",
   "refreshOverlayCiphers",
+  "requestFido2Fallback",
   "triggerDelayedAutofillInlineMenuClosure",
   "updateAutofillInlineMenuColorScheme",
   "updateAutofillInlineMenuListHeight",
